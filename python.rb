@@ -53,15 +53,14 @@ class Python < Formula
     site_packages.mkpath
     # Symlink the prefix site-packages into the cellar.
     ln_s site_packages, site_packages_cellar
-  end
-  
-  def post_install
+    
     python_bin = bin/"python"
 
     # Unset these so that installing pip and setuptools puts them where we want
     # and not into some other Python the user has installed.
     ENV['PYTHONHOME'] = nil
     ENV['PYTHONPATH'] = nil
+    ENV['LD_LIBRARY_PATH'] += lib
 
     # Install setuptools
     resource('setuptools').stage { system python_bin, "ez_setup.py" }
@@ -79,18 +78,10 @@ class Python < Formula
       force=1
       prefix=#{HOMEBREW_PREFIX}
     EOF
-    if linked_keg.symlink?
-      linked_keg.unlink
-      keg = Keg.new(prefix)
-      begin
-        keg.link
-      rescue Exception => e
-        onoe "The `brew link` step did not complete successfully"
-      end
-    end
   end
 
   test do
     system "#{bin}/python2"
+    system "#{bin}/pip"
   end
 end
