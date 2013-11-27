@@ -11,6 +11,11 @@ class GlobusToolkit < Formula
   depends_on 'libtool' => :recommended
 
   def install
+    # fix up the configure script so libraries actually go in lib
+    # --libdir to ./configure is ignored for some reason
+    inreplace "configure", 'libdir=\'${exec_prefix}/lib32\'', 'libdir=\'${exec_prefix}/lib\''
+    inreplace "configure", 'libdir=\'${exec_prefix}/lib64\'', 'libdir=\'${exec_prefix}/lib\''
+
     ENV.deparallelize
     system "./configure", "--prefix=#{prefix}"
     if build.include? 'gridftp-client'
@@ -19,5 +24,9 @@ class GlobusToolkit < Formula
       system "make"
     end
     system "make install"
+  end
+  
+  def caveats
+    return "Please set GLOBUS_LOCATION="+HOMEBREW_PREFIX
   end
 end
