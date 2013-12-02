@@ -10,13 +10,13 @@ class Python < Formula
   depends_on 'homebrew/dupes/tcl-tk' if build.with? 'brewed-tk'
 
   resource 'setuptools' do
-    url 'https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py'
-    sha1 '2959f6eaa3fa29f6c06874a416e8e6876bce7910'
+    url 'https://pypi.python.org/packages/source/s/setuptools/setuptools-1.4.2.tar.gz'
+    sha1 '700ba918adef73b51a5356c3af44df58be7589bc'
   end
 
   resource 'pip' do
-    url 'https://raw.github.com/pypa/pip/master/contrib/get-pip.py'
-    sha1 '967e525ff8ad5ecc0c73c777f6fe9b0eee10b447'
+    url 'https://pypi.python.org/packages/source/p/pip/pip-1.4.1.tar.gz'
+    sha1 '9766254c7909af6d04739b4a7732cc29e9a48cb0'
   end
 
   def site_packages_cellar
@@ -54,19 +54,26 @@ class Python < Formula
     # Symlink the prefix site-packages into the cellar.
     ln_s site_packages, site_packages_cellar
     
-    python_bin = bin/"python"
+    python_bin = prefix/"bin/python"
 
     # Unset these so that installing pip and setuptools puts them where we want
     # and not into some other Python the user has installed.
     ENV['PYTHONHOME'] = nil
     ENV['PYTHONPATH'] = nil
-    ENV['LD_LIBRARY_PATH'] += lib
+    if ENV['LD_LIBRARY_PATH'] == nil
+        ENV['LD_LIBRARY_PATH'] = prefix/"lib"
+    else
+        ENV['LD_LIBRARY_PATH'] += prefix/"lib"
+    end
+
+    setup_args = [ "-s", "setup.py", "--no-user-cfg", "install", "--force", "--verbose",
+                   "--install-scripts=#{bin}", "--install-lib=#{site_packages}" ]
 
     # Install setuptools
-    resource('setuptools').stage { system python_bin, "ez_setup.py" }
+    resource('setuptools').stage { system python_bin, *setup_args }
 
     # Install pip
-    resource('pip').stage { system python_bin, "get-pip.py", "-I" }
+    resource('pip').stage { system python_bin, *setup_args }
 
     # And now we write the distutils.cfg
     cfg = prefix/"lib/python2.7/distutils/distutils.cfg"
@@ -85,3 +92,4 @@ class Python < Formula
     system "#{bin}/pip"
   end
 end
+
